@@ -48,6 +48,16 @@ app.post('/api/shorturl', (req, res) => {
 });
 
 app.get('/app/shorturl/:shortCode', (req, res) => {
+  const hostname = req.hostname;
+  dns.lookup(hostname, (err, address, family) => {
+    if (err) {
+      res.json({
+        error:'invalid url'
+      })
+      return;
+    }
+  
+  });
   const shortCode = req.params.shortCode;
   const originalUrl = urlDatabase[shortCode];
   if (originalUrl) {

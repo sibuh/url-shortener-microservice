@@ -24,40 +24,40 @@ app.get('/api/hello', function(req, res) {
   res.json({ greeting: 'hello API' });
 });
 
-app.post('/api/shorturl', (req, res) => {
-  const body = req.body; 
-  const hostname = req.hostname;
-  dns.lookup(hostname, (err, address, family) => {
-    if (err) {
-      res.json({
-        error:'invalid url'
-      })
-      return;
-    }
-  
+const domainExists = async (url) => {
+  const domain = new URL(url).hostname;
+  return new Promise((resolve) => {
+    dns.lookup(domain, (err) => {
+      if (err) {
+        resolve(false);
+      } else {
+        resolve(true);
+      }
+    });
   });
+};
 
-  const originalUrl = body.url;
+app.post('/api/shorturl', async (req, res) => {
+  const { url } = req.body;
+  if (!url) {
+    return res.status(400).json({ error: 'URL is required' });
+  }
+
+  const isValidDomain = await domainExists(url);
+  if (!isValidDomain) {
+    return res.json({ error: 'invalid url' });
+  }
+
   const shortCode = shortid.generate();
-  urlDatabase[shortCode] = originalUrl;
+  urlDatabase[shortCode] = url;
   res.json({ 
-    original_url:originalUrl,
+    original_url:url,
     short_url:shortCode
    });
-
 });
 
-app.get('/app/shorturl/:shortCode', (req, res) => {
-  const hostname = req.hostname;
-  dns.lookup(hostname, (err, address, family) => {
-    if (err) {
-      res.json({
-        error:'invalid url'
-      })
-      return;
-    }
   
-  });
+app.get('/api/shorturl/:shortCode', (req, res) => {
   const shortCode = req.params.shortCode;
   const originalUrl = urlDatabase[shortCode];
   if (originalUrl) {
